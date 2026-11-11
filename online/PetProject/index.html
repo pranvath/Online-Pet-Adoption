@@ -31,10 +31,7 @@
         }
     </script>
     <style>
-        /* Custom styles for animations and smooth transitions */
-        .fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-        }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -43,23 +40,7 @@
             background-color: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
         }
-        /* Smooth state transitions */
-        .btn-transition {
-            transition: all 0.2s ease;
-        }
-        /* Styling the dynamically added pet cards */
-        .pet-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            border: 1px solid #f3f4f6;
-        }
-        .pet-card h3 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
+        .btn-transition { transition: all 0.2s ease; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
@@ -68,9 +49,28 @@
     <nav class="bg-white shadow-sm sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
-                <div class="flex items-center">
+                <div class="flex items-center cursor-pointer" onclick="toggleView('user')">
                     <i class="fa-solid fa-paw text-brand-500 text-2xl mr-2"></i>
-                    <span class="font-bold text-xl text-gray-900">ForeverHomes</span>
+                    <span class="font-bold text-xl text-gray-900 hidden sm:inline-block">ForeverHomes</span>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <button onclick="toggleView('user')" id="nav-user-btn" class="text-brand-600 bg-brand-50 font-medium px-3 py-2 rounded-md btn-transition text-sm sm:text-base">
+                        Browse Pets
+                    </button>
+                    <button onclick="toggleView('staff')" id="nav-staff-btn" class="text-gray-500 font-medium px-3 py-2 rounded-md hover:bg-gray-100 btn-transition text-sm sm:text-base">
+                        Staff
+                    </button>
+                    
+                    <!-- Auth Buttons -->
+                    <button onclick="toggleView('login')" id="nav-login-btn" class="text-gray-500 font-medium px-3 py-2 rounded-md hover:bg-gray-100 btn-transition text-sm sm:text-base">
+                        Login
+                    </button>
+                    <button onclick="toggleView('register')" id="nav-register-btn" class="bg-brand-500 text-white font-medium px-4 py-2 rounded-md hover:bg-brand-600 btn-transition shadow-sm text-sm sm:text-base">
+                        Register
+                    </button>
+                    <button onclick="handleLogout()" id="nav-logout-btn" class="hidden text-red-600 font-medium px-3 py-2 rounded-md hover:bg-red-50 btn-transition text-sm sm:text-base">
+                        Logout <i class="fa-solid fa-arrow-right-from-bracket ml-1"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -82,67 +82,433 @@
         <!-- ================= USER VIEW (BROWSE PETS) ================= -->
         <div id="user-view" class="fade-in block">
             
-            <!-- Header -->
+            <!-- Header & Filters -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Find Your New Best Friend</h1>
                 <p class="text-gray-600 mb-6">Browse our available pets and give them a forever home.</p>
+                
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div class="flex space-x-2 w-full sm:w-auto">
+                        <span class="text-gray-500 font-medium self-center mr-2"><i class="fa-solid fa-filter mr-1"></i>Type:</span>
+                        <select id="filter-type" onchange="renderPets()" class="bg-gray-50 border border-gray-200 text-gray-700 rounded-lg focus:ring-brand-500 focus:border-brand-500 block w-full p-2.5">
+                            <option value="all">All Types</option>
+                            <option value="Dog">Dogs</option>
+                            <option value="Cat">Cats</option>
+                        </select>
+                    </div>
+                    <div class="flex space-x-2 w-full sm:w-auto">
+                        <span class="text-gray-500 font-medium self-center mr-2"><i class="fa-solid fa-heart-circle-check mr-1"></i>Status:</span>
+                        <select id="filter-status" onchange="renderPets()" class="bg-gray-50 border border-gray-200 text-gray-700 rounded-lg focus:ring-brand-500 focus:border-brand-500 block w-full p-2.5">
+                            <option value="all">All Statuses</option>
+                            <option value="available">Available Only</option>
+                            <option value="adopted">Adopted</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <!-- Pet Container -->
-            <!-- Updated ID from pet-grid to pet-container to match the new JavaScript -->
-            <div id="pet-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Pet cards will be injected here by JavaScript -->
+            <!-- Pet Grid -->
+            <div id="pet-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Pet cards injected here -->
             </div>
             
+            <!-- Empty State Message -->
+            <div id="empty-state" class="hidden text-center py-12">
+                <i class="fa-solid fa-magnifying-glass text-gray-300 text-5xl mb-4"></i>
+                <h3 class="text-xl font-medium text-gray-900">No pets found</h3>
+                <p class="text-gray-500 mt-2">Try adjusting your filters or check if the backend is running.</p>
+            </div>
+        </div>
+
+        <!-- ================= STAFF VIEW (DASHBOARD) ================= -->
+        <div id="staff-view" class="fade-in hidden">
+            <h1 class="text-3xl font-bold text-gray-900 mb-8">Staff Dashboard</h1>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Pending Requests -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[600px] w-full lg:col-span-2 max-w-3xl mx-auto">
+                    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-800"><i class="fa-solid fa-inbox text-brand-500 mr-2"></i>Pending Requests</h2>
+                        <span id="request-count-badge" class="bg-brand-100 text-brand-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-grow bg-gray-50/50" id="requests-container">
+                        <!-- Request cards injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= LOGIN VIEW ================= -->
+        <div id="login-view" class="fade-in hidden max-w-md mx-auto mt-10">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <div class="text-center mb-8">
+                    <i class="fa-solid fa-circle-user text-brand-500 text-5xl mb-3"></i>
+                    <h2 class="text-2xl font-bold text-gray-900">Welcome Back</h2>
+                    <p class="text-gray-500 text-sm mt-1">Please enter your details to sign in.</p>
+                </div>
+                
+                <form id="login-form" onsubmit="handleLogin(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <input type="email" required class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-brand-500 focus:border-brand-500" placeholder="you@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" required class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-brand-500 focus:border-brand-500" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-4 rounded-lg btn-transition shadow-sm">
+                        Sign In
+                    </button>
+                </form>
+                <p class="text-center text-sm text-gray-600 mt-6">
+                    Don't have an account? <button onclick="toggleView('register')" class="font-medium text-brand-600 hover:text-brand-500">Register here</button>
+                </p>
+            </div>
+        </div>
+
+        <!-- ================= REGISTER VIEW ================= -->
+        <div id="register-view" class="fade-in hidden max-w-md mx-auto mt-10">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <div class="text-center mb-8">
+                    <i class="fa-solid fa-user-plus text-brand-500 text-5xl mb-3"></i>
+                    <h2 class="text-2xl font-bold text-gray-900">Create an Account</h2>
+                    <p class="text-gray-500 text-sm mt-1">Join us to start your adoption journey.</p>
+                </div>
+                
+                <form id="register-form" onsubmit="handleRegister(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <input type="text" required class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-brand-500 focus:border-brand-500" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <input type="email" required class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-brand-500 focus:border-brand-500" placeholder="you@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" required class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-brand-500 focus:border-brand-500" placeholder="Create a password">
+                    </div>
+                    <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-4 rounded-lg btn-transition shadow-sm">
+                        Create Account
+                    </button>
+                </form>
+                <p class="text-center text-sm text-gray-600 mt-6">
+                    Already have an account? <button onclick="toggleView('login')" class="font-medium text-brand-600 hover:text-brand-500">Sign in</button>
+                </p>
+            </div>
         </div>
 
     </main>
 
+    <!-- ================= MODALS & ALERTS ================= -->
+    <div id="adoption-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden fade-in">
+            <div class="bg-brand-500 p-4 text-white flex justify-between items-center">
+                <h3 class="font-semibold text-lg">Adoption Request</h3>
+                <button onclick="closeModal()" class="text-brand-100 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="flex items-center space-x-4 mb-6 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <div id="modal-pet-image" class="w-16 h-16 rounded-full bg-gray-200 bg-cover bg-center"></div>
+                    <div>
+                        <p class="text-sm text-gray-500">You are requesting to adopt:</p>
+                        <p id="modal-pet-name" class="font-bold text-gray-900 text-lg">Pet Name</p>
+                    </div>
+                </div>
+                
+                <form id="adoption-form" onsubmit="submitAdoptionRequest(event)" class="space-y-4">
+                    <input type="hidden" id="modal-pet-id">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Full Name</label>
+                        <input type="text" id="req-name" required class="w-full rounded-lg border-gray-300 border p-2.5 focus:ring-brand-500 focus:border-brand-500" placeholder="John Doe">
+                    </div>
+                    <div class="pt-2 flex space-x-3">
+                        <button type="button" onclick="closeModal()" class="flex-1 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2.5 px-4 rounded-lg btn-transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-4 rounded-lg btn-transition shadow-sm">
+                            Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3 pointer-events-none">
+        <i class="fa-solid fa-circle-check text-xl"></i>
+        <span id="toast-msg" class="font-medium">Success!</span>
+    </div>
+
     <!-- ================= JAVASCRIPT LOGIC ================= -->
     <script>
-// Function to fetch pets from the Java backend
-async function fetchPets() {
-    try {
-        // Send a GET request to your Spring Boot API
-        const response = await fetch('http://localhost:8080/api/pets');
-        
-        // Check if the request was successful
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        // --- Global State ---
+        let pets = []; 
+        let adoptionRequests = [];
+        let nextReqId = 1;
+        let isLoggedIn = false; // Tracks auth state
+
+        // --- View & Navigation Logic ---
+        function toggleView(view) {
+            // Hide all views
+            const views = ['user-view', 'staff-view', 'login-view', 'register-view'];
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            
+            // Reset Nav styling
+            const navBtns = ['nav-user-btn', 'nav-staff-btn', 'nav-login-btn'];
+            navBtns.forEach(btn => {
+                const el = document.getElementById(btn);
+                if (el) el.className = 'text-gray-500 font-medium px-3 py-2 rounded-md hover:bg-gray-100 btn-transition text-sm sm:text-base';
+            });
+
+            // Show selected view and update nav active state
+            document.getElementById(view + '-view').classList.remove('hidden');
+            
+            if (view === 'user') {
+                document.getElementById('nav-user-btn').className = 'text-brand-600 bg-brand-50 font-medium px-3 py-2 rounded-md btn-transition text-sm sm:text-base';
+                renderPets(); 
+            } else if (view === 'staff') {
+                document.getElementById('nav-staff-btn').className = 'text-brand-600 bg-brand-50 font-medium px-3 py-2 rounded-md btn-transition text-sm sm:text-base';
+                renderRequests();
+            } else if (view === 'login' && !isLoggedIn) {
+                document.getElementById('nav-login-btn').className = 'text-brand-600 bg-brand-50 font-medium px-3 py-2 rounded-md btn-transition text-sm sm:text-base';
+            }
         }
-        
-        // Parse the JSON response into a JavaScript array
-        const pets = await response.json();
-        
-        // Call your function to draw the pets on the screen
-        renderPets(pets);
-        
-    } catch (error) {
-        console.error("Could not fetch pets from the backend:", error);
-        document.getElementById('pet-container').innerHTML = 
-            "<p class='text-red-500 col-span-full'>Error loading pets. Is the Java backend running?</p>";
-    }
-}
 
-// Function to update the HTML (DOM)
-function renderPets(petsArray) {
-    const container = document.getElementById('pet-container');
-    container.innerHTML = ''; // Clear out old data
-    
-    petsArray.forEach(pet => {
-        container.innerHTML += `
-            <div class="pet-card">
-                <h3>${pet.name} (${pet.type})</h3>
-                <p>Age: ${pet.age}</p>
-                <p>${pet.description}</p>
-                <p>Status: ${pet.adopted ? 'Adopted' : 'Available'}</p>
-            </div>
-        `;
-    });
-}
+        function updateAuthButtons() {
+            const loginBtn = document.getElementById('nav-login-btn');
+            const registerBtn = document.getElementById('nav-register-btn');
+            const logoutBtn = document.getElementById('nav-logout-btn');
 
-// Automatically fetch pets when the page loads
-window.onload = fetchPets;
+            if (isLoggedIn) {
+                loginBtn.classList.add('hidden');
+                registerBtn.classList.add('hidden');
+                logoutBtn.classList.remove('hidden');
+            } else {
+                loginBtn.classList.remove('hidden');
+                registerBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+            }
+        }
+
+        // --- Fetch & Render Logic (Java Backend Connection) ---
+        async function fetchPets() {
+            try {
+                const response = await fetch('http://localhost:8080/api/pets');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                pets = await response.json();
+                renderPets(); 
+            } catch (error) {
+                console.error("Could not fetch pets from the backend:", error);
+                document.getElementById('pet-grid').innerHTML = 
+                    "<p class='text-red-500 font-medium col-span-full text-center'>Error loading pets. Please ensure the Java Spring Boot backend is running on port 8080.</p>";
+            }
+        }
+
+        function renderPets() {
+            const grid = document.getElementById('pet-grid');
+            const emptyState = document.getElementById('empty-state');
+            const typeFilter = document.getElementById('filter-type').value;
+            const statusFilter = document.getElementById('filter-status').value;
+
+            grid.innerHTML = '';
+
+            const filteredPets = pets.filter(pet => {
+                const isAdopted = pet.adopted || pet.isAdopted || false; 
+                const typeMatch = typeFilter === 'all' || pet.type === typeFilter;
+                const statusMatch = statusFilter === 'all' 
+                    || (statusFilter === 'available' && !isAdopted)
+                    || (statusFilter === 'adopted' && isAdopted);
+                
+                return typeMatch && statusMatch;
+            });
+
+            if (filteredPets.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } else {
+                grid.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                
+                filteredPets.forEach(pet => {
+                    const isAdopted = pet.adopted || pet.isAdopted || false;
+                    const card = document.createElement('div');
+                    card.className = 'bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col';
+                    
+                    const color = pet.type === 'Dog' ? 'f97316' : '6366f1';
+                    const imgUrl = pet.imageUrl || `https://placehold.co/400x300/${color}/ffffff?text=${pet.name}`;
+
+                    const statusBadge = isAdopted 
+                        ? `<span class="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border border-gray-200"><i class="fa-solid fa-house-chimney mr-1"></i>Adopted</span>`
+                        : `<span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border border-green-200"><i class="fa-solid fa-circle-check mr-1"></i>Available</span>`;
+                    
+                    const actionButton = isAdopted
+                        ? `<button disabled class="w-full bg-gray-100 text-gray-400 font-medium py-3 px-4 cursor-not-allowed">Already Adopted</button>`
+                        : `<button onclick="openModal(${pet.id})" class="w-full bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white font-medium py-3 px-4 btn-transition border-t border-brand-100 hover:border-brand-500">Adopt Me <i class="fa-solid fa-paw ml-1"></i></button>`;
+
+                    const icon = pet.type === 'Dog' ? 'fa-dog' : 'fa-cat';
+
+                    card.innerHTML = `
+                        <div class="h-48 bg-gray-200 relative bg-cover bg-center" style="background-image: url('${imgUrl}')">
+                            <div class="absolute top-3 right-3">${statusBadge}</div>
+                        </div>
+                        <div class="p-5 flex-grow">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-xl font-bold text-gray-900">${pet.name}</h3>
+                                <span class="text-gray-500 text-sm bg-gray-100 px-2 py-1 rounded flex items-center">
+                                    <i class="fa-solid ${icon} mr-1"></i> ${pet.age} yrs
+                                </span>
+                            </div>
+                            <p class="text-gray-600 text-sm line-clamp-3">${pet.description || 'No description provided.'}</p>
+                        </div>
+                        <div class="mt-auto">${actionButton}</div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        // --- Modals & Requests ---
+        function openModal(petId) {
+            const pet = pets.find(p => p.id === petId);
+            if (!pet) return;
+
+            const color = pet.type === 'Dog' ? 'f97316' : '6366f1';
+            const imgUrl = pet.imageUrl || `https://placehold.co/400x300/${color}/ffffff?text=${pet.name}`;
+
+            document.getElementById('modal-pet-id').value = pet.id;
+            document.getElementById('modal-pet-name').innerText = `${pet.name} (${pet.age} yrs)`;
+            document.getElementById('modal-pet-image').style.backgroundImage = `url('${imgUrl}')`;
+            
+            const modal = document.getElementById('adoption-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex'); 
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('adoption-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('adoption-form').reset();
+        }
+
+        function submitAdoptionRequest(e) {
+            e.preventDefault();
+            const petId = parseInt(document.getElementById('modal-pet-id').value);
+            const name = document.getElementById('req-name').value;
+
+            adoptionRequests.push({
+                id: nextReqId++,
+                petId: petId,
+                requesterName: name,
+            });
+
+            closeModal();
+            showToast('Request submitted successfully!');
+        }
+
+        async function approveRequest(requestId, petId) {
+            try {
+                const response = await fetch(`http://localhost:8080/api/pets/${petId}/adopt`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to approve adoption.");
+                }
+
+                showToast("Success! The pet has been officially marked as adopted.");
+                
+                // Remove the request from local state
+                adoptionRequests = adoptionRequests.filter(r => r.id !== requestId);
+                
+                // Update views
+                renderRequests();
+                fetchPets();
+                
+            } catch (error) {
+                console.error("Error approving request:", error);
+                alert("Could not connect to the backend. Is Spring Boot running?");
+            }
+        }
+
+        function renderRequests() {
+            const container = document.getElementById('requests-container');
+            const badge = document.getElementById('request-count-badge');
+            badge.innerText = adoptionRequests.length;
+            container.innerHTML = '';
+
+            if (adoptionRequests.length === 0) {
+                container.innerHTML = `<div class="text-center py-10"><p class="text-gray-500 font-medium">No pending requests.</p></div>`;
+                return;
+            }
+
+            adoptionRequests.forEach(req => {
+                const pet = pets.find(p => p.id === req.petId);
+                if(!pet) return; 
+
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 fade-in">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-lg">${req.requesterName}</h4>
+                                <p class="text-xs text-gray-500">Interested in: ${pet.name}</p>
+                            </div>
+                        </div>
+                        <button onclick="approveRequest(${req.id}, ${pet.id})" class="w-full bg-green-50 text-green-700 hover:bg-green-600 hover:text-white border border-green-200 font-medium py-2 px-3 rounded text-sm btn-transition">
+                            Approve Request
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // --- Auth Actions ---
+        function handleLogin(e) {
+            e.preventDefault();
+            isLoggedIn = true;
+            updateAuthButtons();
+            showToast('Logged in successfully!');
+            toggleView('user'); 
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            // Automatically log them in after registration (optional, but good UX)
+            isLoggedIn = true;
+            updateAuthButtons();
+            showToast('Account created and logged in!');
+            toggleView('user');
+        }
+
+        function handleLogout() {
+            isLoggedIn = false;
+            updateAuthButtons();
+            showToast('Logged out successfully.');
+            toggleView('user');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            toast.classList.remove('opacity-0', 'translate-y-20');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-20');
+            }, 3000);
+        }
+
+        // Initialize
+        window.onload = () => {
+            fetchPets();
+            updateAuthButtons(); // Setup initial nav state
+        };
     </script>
 </body>
 </html>
